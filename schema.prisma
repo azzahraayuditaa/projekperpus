@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum JenisTransaksi {
+  QRIS
+  TRANSFER
+}
+
+enum Status {
+  LUNAS
+  BELUM_BAYAR
+}
+
+enum JenisDenda {
+  TERLAMBAT
+  HILANG
+}
+
+model User {
+  user_Id       Int         @id @default(autoincrement())
+  uuid          String      @unique @default("")
+  nama_user     String      @default("")
+  password      String      @default("")
+  tglPinjam     DateTime    @default(now())
+  batasPinjam   DateTime    @updatedAt
+  updateAt      DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+  transaksi Transaksi[]
+}
+
+model Buku {
+  buku_Id      Int          @id @default(autoincrement())
+  tahun_terbit Int          @default(0)
+  tgl_terbit   String       @default("")
+  jumlah       Int          @default(0)
+  judul        String       @default("")
+  jenis        String       @default("")
+  pengarang    String       @default("")
+  updateAt     DateTime     @updatedAt
+  createdAt    DateTime     @default(now())
+  transaksi Transaksi[]
+}
+
+model Customer {
+  customer_Id      Int      @id @default(autoincrement())
+  uuid             String   @unique @default("")
+  customer_nama    String   @default("")
+  customer_alamat  String   @default("")
+  tglPinjam        DateTime @default(now())
+  batasPinjam      DateTime @updatedAt
+  updateAt         DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  transaksi Transaksi[]
+  denda Denda[]
+  ulasan Ulasan[]
+  jadwalPesanan JadwalPesanan[]
+  pengantaran Pengantaran[]
+}
+
+model Transaksi {
+  transaksi_Id    Int               @id @default(autoincrement())
+  uuid            String            @unique @default("")
+  tglPinjam       DateTime          @default(now())
+  batasPinjam     DateTime          @updatedAt
+  jenis_transaksi JenisTransaksi    @default(QRIS)
+  pajak           String            @default("")
+  statusBayar     Status            @default(BELUM_BAYAR)
+  total_harga     Int               @default(0)
+  user_Id         Int
+  user            User              @relation(fields: [user_Id],references: [user_Id])
+  customer_Id     Int 
+  customer        Customer          @relation(fields: [customer_Id], references: [customer_Id])
+  buku_Id         Int
+  buku            Buku              @relation(fields: [buku_Id],references: [buku_Id])
+  updateAt        DateTime          @updatedAt
+  createdAt       DateTime          @default(now())
+}
+
+model Denda {
+  denda_Id       Int @id @default(autoincrement())
+  customer_Id    Int 
+  custumer       Customer     @relation(fields: [customer_Id],references: [customer_Id])
+  tglPinjam      DateTime     @default(now())
+  batasPinjam    DateTime     @updatedAt
+  kode_denda     String       @default("")
+  jenis_denda    JenisDenda   @default(TERLAMBAT)
+  tarif_denda    Int          @default(0)
+  updateAt       DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+}
+
+model Ulasan {
+  ulasan_Id     Int        @id @default(autoincrement())
+  customer_Id   Int
+  customer      Customer   @relation(fields: [customer_Id],references: [customer_Id])
+  customer_name String     @default("")
+  Rating        Int        @default(0)
+  Pesan_Ulasan  String?    @db.Text
+  updateAt      DateTime   @updatedAt
+  createdAt     DateTime   @default(now())
+}
+
+model JadwalPesanan {
+  jadwalPesanan_Id   Int          @id @default(autoincrement())
+  kurir_Id           Int 
+  kurir              Kurir        @relation(fields: [kurir_Id],references: [kurir_Id])
+  customer_id        Int
+  customer           Customer     @relation(fields: [customer_id],references: [customer_Id])
+  tglPinjam          DateTime     @default(now())
+  batasPinjam        DateTime     @updatedAt
+  updateAt           DateTime     @updatedAt
+  createdAt          DateTime     @default(now())
+}
+
+model Pengantaran {
+  pengantaran_id     Int        @id @default(autoincrement())
+  kurir_id           Int
+  kurir              Kurir      @relation(fields: [kurir_id], references: [kurir_Id]) 
+  customer_Id        Int
+  customer           Customer   @relation(fields: [customer_Id],references: [customer_Id])
+  alamat_customer    String     @default("")
+  customer_nama      String     @default("")
+  updateAt           DateTime   @updatedAt
+  createdAt          DateTime   @default(now())
+}
+
+model Kurir {
+  kurir_Id          Int                @id @default(autoincrement())
+  nomortelp         Int                @default(0)
+  alamat_kurir      String             @default("")
+  nama_kurir        String             @default("")
+  updateAt          DateTime           @updatedAt
+  createdAt         DateTime           @default(now())
+  jadwalPesanan     JadwalPesanan[]
+  pengantaran       Pengantaran[]
+  gaji              Gaji[]
+
+}
+
+model Gaji {
+  gaji_Id        Int          @id @default(autoincrement())
+  kurir_Id       Int 
+  kurir          Kurir        @relation(fields: [kurir_Id],references: [kurir_Id])
+  nama_kurir     String       @default("")
+  pajak          String       @default("")
+  updateAt       DateTime     @updatedAt
+  create         DateTime     @default(now())
+}
+
